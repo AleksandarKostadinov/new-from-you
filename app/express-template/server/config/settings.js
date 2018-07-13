@@ -5,8 +5,9 @@ let rootPath = path.normalize(path.join(__dirname, '/../../'))
 module.exports = {
   development: {
     rootPath: rootPath,
-    db: 'mongodb://localhost:27017/generictemplate',
-    port: 1337
+    db: 'mongodb://localhost:27017/new-from-you-dev',
+    port: 1337,
+    secret: 'very-secret'
   },
   staging: {
   },
