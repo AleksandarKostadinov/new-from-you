@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
-const User = require('../data/User')
+const User = require('./../data/User')
+require('./../data/Comment')
 require('./../data/Article')
 
 module.exports = (settings) => {

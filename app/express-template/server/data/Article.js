@@ -10,7 +10,8 @@ let articleSchema = new mongoose.Schema({
   body: String,
   tagList: [{ type: String }],
   favoritesCount: { type: Number, default: 0 },
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 }, { timestamps: true })
 
 articleSchema.plugin(uniqueValidator, { message: 'is already taken.' })
@@ -30,6 +31,14 @@ articleSchema.methods.toJSONFor = function (user) {
     updatedAt: this.updatedAt,
     author: this.author.toProfileJSONFor(user)
   }
+}
+
+articleSchema.methods.updateFavoriteCount = function () {
+  let article = this
+  return User.count({ favorites: { $in: [article._id] } }).then(function (count) {
+    article.favoritesCount = count
+    return article.save()
+  })
 }
 
 module.exports = mongoose.model('Article', articleSchema)

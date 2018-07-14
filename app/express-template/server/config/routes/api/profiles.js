@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const router = require('express').Router()
 const auth = require('./../../auth')
+const profilesController = require('./../../../controllers').frofiles
 
 router.param('username', function (req, res, next, username) {
   User.findOne({ username: username }).then(function (user) {
@@ -11,15 +12,10 @@ router.param('username', function (req, res, next, username) {
   }).catch(next)
 })
 
-router.get('/:username', auth.optional, function (req, res, next) {
-  if (req.payload) {
-    User.findById(req.payload.id).then(function (user) {
-      if (!user) { return res.json({ profile: req.profile.toProfileJSONFor(false) }) }
-      return res.json({ profile: req.profile.toProfileJSONFor(user) })
-    }).catch(next)
-  } else {
-    return res.json({ profile: req.profile.toProfileJSONFor(false) })
-  }
-})
+router.get('/:username', auth.optional, profilesController.get)
+
+router.post('/:username/follow', auth.required, profilesController.follow)
+
+router.delete('/:username/follow', auth.required, profilesController.unfollow)
 
 module.exports = router

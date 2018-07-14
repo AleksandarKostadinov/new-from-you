@@ -8,16 +8,18 @@ const secret = require('./../config/settings')[env].secret
 const REQUIRED_VALIDATION_MESSAGE = '{PATH} is required'
 
 let userSchema = new mongoose.Schema({
-  username: {type: String, unique: true, required: [true, REQUIRED_VALIDATION_MESSAGE], lowercase: true, index: true},
-  email: {type: String, unique: true, required: [true, REQUIRED_VALIDATION_MESSAGE], lowercase: true, index: true},
+  username: { type: String, unique: true, required: [true, REQUIRED_VALIDATION_MESSAGE], lowercase: true, index: true },
+  email: { type: String, unique: true, required: [true, REQUIRED_VALIDATION_MESSAGE], lowercase: true, index: true },
   bio: String,
   image: String,
   salt: String,
   hash: String,
-  roles: [String]
-}, {timestamps: true})
+  roles: [String],
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Article' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+}, { timestamps: true })
 
-userSchema.plugin(uniqueValidator, {message: 'is already taken.'})
+userSchema.plugin(uniqueValidator, { message: 'is already taken.' })
 
 userSchema.methods.setPassword = function (password) {
   this.salt = encryption.generateSalt()
@@ -55,8 +57,44 @@ userSchema.methods.toProfileJSONFor = function (user) {
     username: this.username,
     bio: this.bio,
     image: this.image,
-    following: false
+    following: user ? user.isFollowing(this._id) : false
   }
+}
+
+userSchema.methods.favorite = function (id) {
+  if (this.favorites.indexOf(id) === -1) {
+    this.favorites.push(id)
+  }
+  return this.save()
+}
+
+userSchema.methods.unfavorite = function (id) {
+  this.favorites.remove(id)
+  return this.save()
+}
+
+userSchema.methods.isFavorite = function (id) {
+  return this.favorites.some(function (favoriteId) {
+    return id.toString() === favoriteId.toString()
+  })
+}
+
+userSchema.methods.follow = function (id) {
+  if (this.following.indexOf(id) === -1) {
+    this.following.push(id)
+  }
+  return this.save()
+}
+
+userSchema.methods.unfollow = function (id) {
+  this.following.remove(id)
+  return this.save()
+}
+
+userSchema.methods.isFollowing = function (id) {
+  return this.following.some(function (followId) {
+    return id.toString() === followId.toString()
+  })
 }
 
 let User = mongoose.model('User', userSchema)
