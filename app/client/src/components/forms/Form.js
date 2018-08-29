@@ -4,13 +4,16 @@ class Form extends Component {
   constructor (props) {
     super(props)
 
-    this.state = genState(this.props.children)
+    this.state = genState(this.props.children, this.props.settings)
     this.onChanged = this.onChanged.bind(this)
     this.onSubmited = this.onSubmited.bind(this)
   }
 
   onChanged (e) {
-    this.setState({[e.target.name]: e.target.value})
+    let name = e.target.name
+    let value = e.target.value
+
+    this.setState({[name]: value})
     console.log(3)
   }
 
@@ -21,6 +24,8 @@ class Form extends Component {
   }
 
   render () {
+    console.log(this.state)
+
     return (
       <form onSubmit={this.onSubmited}>
         {React.Children.map(this.props.children, mapChirdren.bind(this))}
@@ -43,8 +48,10 @@ function genState (children) {
   let settings = {}
 
   React.Children.forEach(children, child => {
+    console.log(child)
+
     if (isValid(child)) {
-      settings[child.props.name] = ''
+      settings[child.props.name] = child.props.value || ''
     }
   })
 

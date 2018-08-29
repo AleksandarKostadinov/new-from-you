@@ -1,5 +1,5 @@
-import fetch from 'isomorfic-fetch'
-require('es6-promise').polyfill()
+import fetcher from './fetcher'
+import observer from './observer'
 
 export default class AuthService {
   // Initializing important variables
@@ -7,27 +7,48 @@ export default class AuthService {
     this.domain = domain || 'http://localhost:1337' // API server domain
     this.fetch = this.fetch.bind(this) // React binding stuff
     this.login = this.login.bind(this)
-    this.getProfile = this.getProfile.bind(this)
+    this.register = this.register.bind(this)
+    this.handleResponse = this.handleResponse.bind(this)
   }
 
-  login (username, password) {
-    // Get a token from api server using the fetch api
-    return this.fetch(`${this.domain}/login`, {
+  register (username, password, email) {
+    return this.fetch(`${this.domain}/api/users/`, {
       method: 'POST',
       body: JSON.stringify({
-        username,
-        password
+        user: {
+          email,
+          username,
+          password
+        }
       })
-    }).then(res => {
-      this.setToken(res.token) // Setting the token in localStorage
-      return Promise.resolve(res)
-    })
+    }).then(this.handleResponse)
+  }
+
+  login (email, password) {
+    // Get a token from api server using the fetch api
+    return this.fetch(`${this.domain}/api/users/login`, {
+      method: 'POST',
+      body: JSON.stringify({
+        user: {
+          email,
+          password
+        }
+      })
+    }).then(this.handleResponse)
   }
 
   loggedIn () {
     // Checks if there is a saved token and it's still valid
     const token = this.getToken() // GEtting token from localstorage
-    return !!token && !this.isTokenExpired(token) // handwaiving here
+    return token && true // handwaiving here
+  }
+
+  handleResponse (res) {
+    observer.login.subscribe(() => {}, res.user.username)
+    observer.login.trigger()
+    window.localStorage.setItem('username', res.user.username)
+    this.setToken(res.user.token) // Setting the token in localStorage
+    return Promise.resolve(res)
   }
 
   setToken (idToken) {
@@ -41,13 +62,9 @@ export default class AuthService {
   }
 
   logout () {
+    observer.clear()
     // Clear user token and profile data from localStorage
     window.localStorage.removeItem('id_token')
-  }
-
-  getProfile () {
-    // Using jwt-decode npm package to decode the token
-    // return decode(this.getToken())
   }
 
   fetch (url, options) {
@@ -63,7 +80,7 @@ export default class AuthService {
       headers['Authorization'] = 'Bearer ' + this.getToken()
     }
 
-    return fetch(url, {
+    return fetcher(url, {
       headers,
       ...options
     })
